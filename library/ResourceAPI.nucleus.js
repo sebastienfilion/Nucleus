@@ -285,7 +285,7 @@ class NucleusResourceAPI {
         const $resource = new NucleusResourceModel(resourceAttributes, originUserID);
         const resourceRelationships = nodeRelationshipList
           .reduce((accumulator, { predicate: relationship, object: { ID: resourceID, type: resourceType } }) => {
-            if (!('relationship' in accumulator)) accumulator[relationship] = [];
+            if (!(relationship in accumulator)) accumulator[relationship] = [];
             accumulator[relationship].push({ relationship, resourceID, resourceType });
 
             return accumulator;
@@ -359,7 +359,7 @@ class NucleusResourceAPI {
 
             const resourceRelationships = nodeRelationshipList
               .reduce((accumulator, {predicate: relationship, object: {ID: resourceID, type: resourceType}}) => {
-                if (!('relationship' in accumulator)) accumulator[relationship] = [];
+                if (!(relationship in accumulator)) accumulator[relationship] = [];
                 accumulator[relationship].push({relationship, resourceID, resourceType});
 
                 return accumulator;
@@ -549,7 +549,7 @@ class NucleusResourceAPI {
 
             const resourceRelationships = nodeRelationshipList
               .reduce((accumulator, {predicate: relationship, object: {ID: resourceID, type: resourceType}}) => {
-                if (!('relationship' in accumulator)) accumulator[relationship] = [];
+                if (!(relationship in accumulator)) accumulator[relationship] = [];
                 accumulator[relationship].push({relationship, resourceID, resourceType});
 
                 return accumulator;
@@ -680,7 +680,7 @@ class NucleusResourceAPI {
 
         const resourceRelationships = nodeRelationshipList
           .reduce((accumulator, { predicate: relationship, object: { ID: resourceID, type: resourceType } }) => {
-            if (!('relationship' in accumulator)) accumulator[relationship] = [];
+            if (!(relationship in accumulator)) accumulator[relationship] = [];
             accumulator[relationship].push({ relationship, resourceID, resourceType });
 
             return accumulator;
