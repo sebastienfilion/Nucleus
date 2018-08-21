@@ -32,12 +32,24 @@ local function retrieveAllAncestorsForNode (node)
 
     local function recursivelyRetrieveAncestorForNodeByID(node)
         local ancestorNodeList = redis.call('ZRANGEBYLEX', itemKey, '[SPO:'.. node ..':is-member-of', '[SPO:'.. node ..':is-member-of:\xff')
+        local archivedAncestorNodeList = redis.call('ZRANGEBYLEX', itemKey, '[*SPO:'.. node ..':is-member-of', '[*SPO:'.. node ..':is-member-of:\xff')
 
-        if (table.getn(ancestorNodeList) == 0) then return true end
+        if (table.getn(ancestorNodeList) == 0 and table.getn(archivedAncestorNodeList) == 0) then return true end
 
-        redis.log(redis.LOG_DEBUG, string.format("Nucleus: Retrieved %s ancestor(s) for vector %s.", table.getn(ancestorNodeList), node));
+        redis.log(redis.LOG_DEBUG, string.format("Nucleus: Retrieved %s ancestor(s) for vector %s.", table.getn(ancestorNodeList) + table.getn(archivedAncestorNodeList), node));
+
+        if (table.getn(archivedAncestorNodeList) ~= 0) then
+            for index, tripple in pairs(archivedAncestorNodeList) do
+                table.insert(ancestorNodeList, tripple);
+            end
+        end
 
         for index, tripple in pairs(ancestorNodeList) do
+            local relationshipIsArchived = string.sub(tripple, 1, 1) == '*'
+
+            if (relationshipIsArchived) then
+                tripple = string.sub(tripple, 1)
+            end
 
             local splittedTripple = splitTripple(tripple)
             local subject = node
@@ -64,14 +76,10 @@ end
 
 for index, node in pairs(nodeList) do
     if (redis.call('EXISTS', 'NodeList:HierarchyTreeUpward:' .. node) == 1) then
-        redis.log(redis.LOG_DEBUG, "FU0");
-
         local cachedAncestorNodeList = redis.call('SMEMBERS', 'NodeList:HierarchyTreeUpward:' .. node)
 
         table.insert(ancestorNodeListAccumulator, cachedAncestorNodeList)
     else
-        redis.log(redis.LOG_DEBUG, "FU1");
-
         local ancestorNodeList = retrieveAllAncestorsForNode(node)
 
         table.insert(ancestorNodeListAccumulator, ancestorNodeList)

@@ -117,6 +117,13 @@ class NucleusResourceRelationshipDatastore {
    * @returns {Promise<void>}
    */
   createRelationshipBetweenSubjectAndObject (subject, predicate, object) {
+    if (nucleusValidator.isObject(subject) || nucleusValidator.isObject(object)) {
+      const stringifiedSubjectNode = (nucleusValidator.isObject(subject)) ? `${subject.type}-${subject.ID}` : subject;
+      const stringifiedObjectNode = (nucleusValidator.isObject(object)) ? `${object.type}-${object.ID}` : object;
+
+      return this.createRelationshipBetweenSubjectAndObject(stringifiedSubjectNode, predicate, stringifiedObjectNode);
+    }
+
     if (!nucleusValidator.isString(subject) || !this.validateVectorFormat(subject)) throw new NucleusError(`The subject must have the form "resource type + resource ID" but got "${subject}"`);
     if (!nucleusValidator.isString(object) || !this.validateVectorFormat(object)) throw new NucleusError(`The object must have the form "resource type + resource ID" but got "${object}"`);
 

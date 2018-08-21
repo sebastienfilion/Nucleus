@@ -32,7 +32,7 @@ class DummyResourceModel extends NucleusResource {
 
 }
 
-mocha.suite("Nucleus Resource API", function () {
+mocha.suite.only("Nucleus Resource API", function () {
 
   mocha.suiteSetup(function () {
     const $datastore = new NucleusDatastore('Test', {
@@ -1084,6 +1084,163 @@ mocha.suite("Nucleus Resource API", function () {
 
         });
 
+    });
+
+  });
+
+  mocha.suite("Archive", function () {
+
+    class ArchiveTestResourceModel extends NucleusResource {
+
+      constructor (resourceAttributes, authorUserID) {
+        super('Dummy', {}, resourceAttributes, authorUserID);
+      }
+
+    }
+
+    mocha.setup(function () {
+      const { $datastore, $resourceRelationshipDatastore } = this;
+
+      // Given this structure
+      //
+      // SYSTEM
+      //   +
+      //   +-> Group <dc828ae2-6aca-4ede-8081-f703af2d6471>
+      //   |    +
+      //   |    +-> User <fcc66afe-3d80-4225-bd1f-7a34bd26f403>
+      //   |    |
+      //   |    +-> User <0b4d9c2c-efca-4e3f-8541-8e4cfe788cd9>
+      //   |    |
+      //   |    +-> Resource <c6c1f7df-d254-4e43-a903-fc362dce49db>
+      //   |
+      //   +-> Group <8e847a4b-1a42-449d-a7e9-7a6b04ab51f7>
+      //        +
+      //        +-> User <c5237d73-bf40-4fda-9dee-c6d8b29acd05>
+      //        |
+      //        +-> Resource <54982ac9-bf59-4441-aefd-51c519dfcaa8>
+
+      const groupNodeA = {
+        type: 'Group',
+        ID: 'dc828ae2-6aca-4ede-8081-f703af2d6471'
+      };
+      const groupNodeB = {
+        type: 'Group',
+        ID: '8e847a4b-1a42-449d-a7e9-7a6b04ab51f7'
+      };
+      const userNodeA = {
+        type: 'User',
+        ID: '135a6832-cd5f-4097-b2a5-4b1a7c5e229c'
+      };
+      const userNodeB = {
+        type: 'User',
+        ID: '0b4d9c2c-efca-4e3f-8541-8e4cfe788cd9'
+      };
+      const userNodeC = {
+        type: 'User',
+        ID: 'c5237d73-bf40-4fda-9dee-c6d8b29acd05'
+      };
+      const resourceNodeA = {
+        type: 'Resource',
+        ID: 'c6c1f7df-d254-4e43-a903-fc362dce49db'
+      };
+      const resourceNodeB = {
+        type: 'Resource',
+        ID: '54982ac9-bf59-4441-aefd-51c519dfcaa8'
+      };
+
+      const resourceRelationshipListByResourceNode = {
+        [`${userNodeA.type}-${userNodeA.ID}`]: [
+          {
+            relationship: 'is-member-of',
+            resourceID: groupNodeA.ID,
+            resourceType: groupNodeA.type
+          }
+        ],
+        [`${userNodeB.type}-${userNodeB.ID}`]: [
+          {
+            relationship: 'is-authored-by',
+            resourceID: userNodeA.ID,
+            resourceType: userNodeA.type
+          },
+          {
+            relationship: 'is-member-of',
+            resourceID: groupNodeA.ID,
+            resourceType: groupNodeA.type
+          }
+        ],
+        [`${resourceNodeA.type}-${resourceNodeA.ID}`]: [
+          {
+            relationship: 'is-authored-by',
+            resourceID: userNodeB.ID,
+            resourceType: userNodeB.type
+          },
+          {
+            relationship: 'is-member-of',
+            resourceID: groupNodeA.ID,
+            resourceType: groupNodeA.type
+          }
+        ],
+        [`${userNodeC.type}-${userNodeC.ID}`]: [
+          {
+            relationship: 'is-member-of',
+            resourceID: groupNodeB.ID,
+            resourceType: groupNodeB.type
+          }
+        ],
+        [`${resourceNodeB.type}-${resourceNodeB.ID}`]: [
+          {
+            relationship: 'is-authored-by',
+            resourceID: userNodeC.ID,
+            resourceType: userNodeC.type
+          },
+          {
+            relationship: 'is-member-of',
+            resourceID: groupNodeB.ID,
+            resourceType: groupNodeB.type
+          }
+        ]
+      };
+
+      return Promise.all(Object.keys(resourceRelationshipListByResourceNode)
+        .map((stringifiedSubjectNode) => {
+          const resourceRelationshipList = resourceRelationshipListByResourceNode[stringifiedSubjectNode];
+
+          return Promise.all(resourceRelationshipList
+            .map((resourceRelationship) => {
+              const { resourceID, relationship: predicate, resourceType } = resourceRelationship;
+              const resourceItemKey = NucleusResource.generateItemKey(resourceType, resourceID);
+
+              return Promise.all([
+                $resourceRelationshipDatastore.createRelationshipBetweenSubjectAndObject(stringifiedSubjectNode, predicate, `${resourceType}-${resourceID}`),
+                $datastore.addItemToHashFieldByName(resourceItemKey, { ID: resourceID, meta: {}, type: resourceType })
+              ]);
+            }));
+        }));
+    });
+
+    // TODO: Implement a way to retrieve archived relationships specifically;
+
+    mocha.test('Relationships to the subject node are achived.', async function () {
+      const { $datastore, $resourceRelationshipDatastore } = this;
+
+      const { resourceList } = await NucleusResourceAPI.retrieveAllResourcesByType.call({ $datastore, $resourceRelationshipDatastore }, 'User', ArchiveTestResourceModel, '0b4d9c2c-efca-4e3f-8541-8e4cfe788cd9');
+
+      chai.expect(resourceList).to.have.length(2);
+
+      // User B archives User A...
+      return NucleusResourceAPI.archiveResourceByID.call({ $datastore, $resourceRelationshipDatastore }, 'User', '135a6832-cd5f-4097-b2a5-4b1a7c5e229c', '0b4d9c2c-efca-4e3f-8541-8e4cfe788cd9')
+        .then(async () => {
+
+          const { resourceList } = await NucleusResourceAPI.retrieveAllResourcesByType.call({ $datastore, $resourceRelationshipDatastore }, 'User', ArchiveTestResourceModel, '0b4d9c2c-efca-4e3f-8541-8e4cfe788cd9');
+
+          // The resource is no longer retrieved when searching by relationship...
+          chai.expect(resourceList).to.have.length(1);
+
+          // But can be retrieved if requested directly...
+          const { resource } = await NucleusResourceAPI.retrieveResourceByID.call({ $datastore, $resourceRelationshipDatastore }, 'User', ArchiveTestResourceModel, '135a6832-cd5f-4097-b2a5-4b1a7c5e229c', '0b4d9c2c-efca-4e3f-8541-8e4cfe788cd9');
+
+          chai.expect(resource.meta).to.have.property('archivedISOTime');
+        });
     });
 
   });

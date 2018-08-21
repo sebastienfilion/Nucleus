@@ -20,6 +20,62 @@ const HIERARCHY_TREE_CACHE_TTL = 0;
 class NucleusResourceAPI {
 
   /**
+   * Archives a resource given its name and ID.
+   *
+   * @Nucleus ActionName ArchiveResourceByID
+   * @Nucleus ActionAlternativeSignature resourceType NucleusResourceModel resourceID originUserID
+   * @Nucleus ExtendableActionName `Archive{resourceType}ByID`
+   * @Nucleus ExtendableEventName `${resourceType}ByIDArchived`
+   * @Nucleus ExtendableAlternativeActionSignature 'resourceType' `${Nucleus.shiftFirstLetterToLowerCase(resourceType)}ID` 'originUserID'
+   * @Nucleus ExtendableActionArgumentDefault resourceType `${resourceType}`
+   *
+   * @argument {String} resourceType
+   * @argument {String} resourceID
+   * @argument {String} originUserID
+   *
+   * @returns {Promise<{ resourceID: String }>}
+   *
+   * @throws Will throw an error if the resource type is not a string.
+   * @throws Will throw an error if the resource ID is not a string.
+   * @throws Will throw an error if the origin user ID is not a string.
+   * @throws Will throw an error if no datastore is passed.
+   * @throws Will throw an error if no Resource Relationship datastore is passed.
+   * @throws Will throw an error if the resource does not exist.
+   * @throws Will throw an error if the origin user is not authorized to archive the resource.
+   */
+  static async archiveResourceByID (resourceType, resourceID, originUserID) {
+    if (!nucleusValidator.isString(resourceType)) throw new NucleusError.UnexpectedValueTypeNucleusError("The resource type must be a string.");
+    if (!nucleusValidator.isString(resourceID)) throw new NucleusError.UnexpectedValueTypeNucleusError("The resource ID must be a string.");
+    if (!nucleusValidator.isString(originUserID) || nucleusValidator.isEmpty(originUserID)) throw new NucleusError.UnexpectedValueTypeNucleusError("The origin user ID must be a string and can't be undefined.");
+
+    const { $datastore, $resourceRelationshipDatastore } = this;
+
+    if (nucleusValidator.isEmpty($datastore)) throw new NucleusError.UndefinedContextNucleusError("No datastore is provided.");
+    if (nucleusValidator.isEmpty($resourceRelationshipDatastore)) throw new NucleusError.UndefinedContextNucleusError("No Resource Relationship datastore is provided.");
+
+    const resourceItemKey = NucleusResource.generateItemKey(resourceType, resourceID);
+
+    const resourceExists = !!(await $datastore.$$server.existsAsync(resourceItemKey));
+
+    if (!resourceExists) throw new NucleusError.UndefinedContextNucleusError(`The ${resourceType} ("${resourceID}") does not exist.`);
+
+    const { canUpdateResource } = await NucleusResourceAPI.verifyThatUserCanUpdateResource.call(this, originUserID, resourceType, resourceID);
+
+    if (!canUpdateResource) throw new NucleusError.UnauthorizedActionNucleusError(`The user ("${originUserID}") is not authorized to archive the ${resourceType} ("${resourceID}")`);
+
+    return Promise.all([
+      $datastore.retrieveAllItemsFromHashByName(resourceItemKey),
+      $resourceRelationshipDatastore.archiveAllRelationshipsToVector({ ID: resourceID, type: resourceType })
+    ])
+      .then(([ resourceAttributes ]) => {
+        resourceAttributes.meta.archivedISOTime = new Date().toISOString();
+
+        return $datastore.addItemToHashFieldByName(resourceItemKey, resourceAttributes);
+      })
+      .return({ resourceID });
+  }
+
+  /**
    * Assigns one or many relationships to a resource given its ID.
    *
    * @Nucleus ActionName AssignRelationshipsToResourceByID
@@ -250,8 +306,8 @@ class NucleusResourceAPI {
    * @throws Will throw an error if the resource ID is not a string.
    * @throws Will throw an error if the origin user ID is not a string.
    * @throws Will throw an error if no datastore is passed.
-   * @throws Will throw an error if the origin user is not authorized to remove the resource.
    * @throws Will throw an error if the resource does not exist.
+   * @throws Will throw an error if the origin user is not authorized to remove the resource.
    */
   static async removeResourceByID (resourceType, resourceID, originUserID) {
     if (!nucleusValidator.isString(resourceType)) throw new NucleusError.UnexpectedValueTypeNucleusError("The resource type must be a string.");

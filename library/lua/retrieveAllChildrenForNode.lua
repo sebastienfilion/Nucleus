@@ -31,13 +31,25 @@ local function retrieveAllChildrenForNode (node)
     local nodeList = {};
 
     local function recursivelyRetrieveChildrenForNode(node)
-        local ancestorNodeList = redis.call('ZRANGEBYLEX', itemKey, '[OPS:'.. node ..':is-member-of', '[OPS:'.. node ..':is-member-of:\xff')
+        local childrenNodeList = redis.call('ZRANGEBYLEX', itemKey, '[OPS:'.. node ..':is-member-of', '[OPS:'.. node ..':is-member-of:\xff')
+        local archivedChildrenNodeList = redis.call('ZRANGEBYLEX', itemKey, '[*OPS:'.. node ..':is-member-of', '[*OPS:'.. node ..':is-member-of:\xff')
 
-        if (table.getn(ancestorNodeList) == 0) then return true end
+        if (table.getn(childrenNodeList) == 0 and table.getn(archivedChildrenNodeList) == 0) then return true end
 
-        redis.log(redis.LOG_DEBUG, string.format("Nucleus: Retrieved %s children(s) for vector %s.", table.getn(ancestorNodeList), node));
+        redis.log(redis.LOG_DEBUG, string.format("Nucleus: Retrieved %s children(s) for vector %s.", table.getn(childrenNodeList) + table.getn(archivedChildrenNodeList), node));
 
-        for index, tripple in pairs(ancestorNodeList) do
+        if (table.getn(archivedChildrenNodeList) ~= 0) then
+            for index, tripple in pairs(archivedChildrenNodeList) do
+               table.insert(childrenNodeList, tripple);
+            end
+        end
+
+        for index, tripple in pairs(childrenNodeList) do
+            local relationshipIsArchived = string.sub(tripple, 1, 1) == '*'
+
+            if (relationshipIsArchived) then
+                tripple = string.sub(tripple, 1)
+            end
 
             local splittedTripple = splitTripple(tripple)
             local object = node

@@ -29,12 +29,12 @@ local function archiveTripple(itemKey, subject, predicate, object)
     redis.call('ZREM', itemKey, 'PSO:'..predicate..':'..subject..':'..object)
     redis.call('ZREM', itemKey, 'POS:'..predicate..':'..object..':'..subject)
 
-    redis.call('ZADD', itemKey, '*SPO:'..subject..':'..predicate..':'..object)
-    redis.call('ZADD', itemKey, '*SOP:'..subject..':'..object..':'..predicate)
-    redis.call('ZADD', itemKey, '*OPS:'..object..':'..predicate..':'..subject)
-    redis.call('ZADD', itemKey, '*OSP:'..object..':'..subject..':'..predicate)
-    redis.call('ZADD', itemKey, '*PSO:'..predicate..':'..subject..':'..object)
-    redis.call('ZADD', itemKey, '*POS:'..predicate..':'..object..':'..subject)
+    redis.call('ZADD', itemKey, 0, '*SPO:'..subject..':'..predicate..':'..object)
+    redis.call('ZADD', itemKey, 0, '*SOP:'..subject..':'..object..':'..predicate)
+    redis.call('ZADD', itemKey, 0, '*OPS:'..object..':'..predicate..':'..subject)
+    redis.call('ZADD', itemKey, 0, '*OSP:'..object..':'..subject..':'..predicate)
+    redis.call('ZADD', itemKey, 0, '*PSO:'..predicate..':'..subject..':'..object)
+    redis.call('ZADD', itemKey, 0, '*POS:'..predicate..':'..object..':'..subject)
 
     redis.log(redis.LOG_DEBUG, string.format("Nucleus: Archived the relationship between %s, %s and %s.", subject, predicate, object));
 end
