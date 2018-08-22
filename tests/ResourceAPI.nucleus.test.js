@@ -32,7 +32,7 @@ class DummyResourceModel extends NucleusResource {
 
 }
 
-mocha.suite("Nucleus Resource API", function () {
+mocha.suite.only("Nucleus Resource API", function () {
 
   mocha.suiteSetup(function () {
     const $datastore = new NucleusDatastore('Test', {
