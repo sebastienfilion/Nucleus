@@ -523,6 +523,24 @@ class NucleusDatastore {
   }
 
   /**
+   * Retrieves a batch of items given a list of name.
+   *
+   * @argument {String} itemNameList
+   *
+   * @returns {String<Object>}
+   */
+  retrieveBatchItemByName (itemNameList) {
+    const itemDatastoreRequestList = itemNameList
+      .map((itemKey) => {
+
+        return ['HGETALL', itemKey];
+      });
+
+    return this.$$server.multi(itemDatastoreRequestList).execAsync()
+      .then(itemFields => itemFields.filter(Boolean).map(NucleusDatastore.parseHashItem));
+  }
+
+  /**
    * Retrieves an item given its key. `GET key`
    *
    * @argument {String} itemKey
@@ -772,6 +790,18 @@ class NucleusDatastore {
   unsubscribeFromChannelName (channelName) {
 
     return this.$$server.unsubscribeAsync(channelName);
+  }
+
+  /**
+   * Verifies that an item exists given its name.
+   *
+   * @argument {String} itemName
+   *
+   * @returns {Promise<boolean>}
+   */
+  async verifyThatItemByNameExist (itemName) {
+
+    return !!(await this.$$server.existsAsync(itemName));
   }
 
   /**

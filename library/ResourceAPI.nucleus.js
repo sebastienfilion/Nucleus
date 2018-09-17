@@ -55,7 +55,7 @@ class NucleusResourceAPI {
 
     const resourceItemKey = NucleusResource.generateItemKey(resourceType, resourceID);
 
-    const resourceExists = !!(await $datastore.$$server.existsAsync(resourceItemKey));
+    const resourceExists = await $datastore.verifyThatItemByNameExist(resourceItemKey);
 
     if (!resourceExists) throw new NucleusError.UndefinedContextNucleusError(`The ${resourceType} ("${resourceID}") does not exist.`);
 
@@ -104,7 +104,7 @@ class NucleusResourceAPI {
 
     const resourceItemKey = NucleusResource.generateItemKey(resourceType, resourceID);
 
-    const resourceExists = !!(await $datastore.$$server.existsAsync(resourceItemKey));
+    const resourceExists = await $datastore.verifyThatItemByNameExist(resourceItemKey);
 
     if (!resourceExists) throw new NucleusError.UndefinedContextNucleusError(`The ${resourceType} ("${resourceID}") does not exist.`);
 
@@ -190,7 +190,7 @@ class NucleusResourceAPI {
         const $resource = new NucleusResourceModel(resourceAttributes, originUserID, reservedResourceID);
         const resourceItemKey = $resource.generateOwnItemKey();
 
-        const resourceExists = !!(await $datastore.$$server.existsAsync(resourceItemKey));
+        const resourceExists = await $datastore.verifyThatItemByNameExist(resourceItemKey);
 
         if (resourceExists) throw new NucleusError.UndefinedContextNucleusError(`The ${resourceType} ("${$resource.ID}") already exists.`);
 
@@ -251,16 +251,19 @@ class NucleusResourceAPI {
   static extendNodeList(nodeList = [], NucleusResourceModel, originUserID) {
     const { $datastore, $resourceRelationshipDatastore } = this;
 
-    const itemDatastoreRequestList = nodeList
+    const itemKeyList = nodeList
       .map(({ID, type}) => {
         const itemKey = NucleusResource.generateItemKey(type, ID);
 
-        return ['HGETALL', itemKey];
+        return itemKey;
       });
 
-    const $$itemListPromise = $datastore.$$server.multi(itemDatastoreRequestList).execAsync()
-    // NucleusResourceModel, shouldn't request the origin user ID here...
-      .then(itemFields => itemFields.map(NucleusDatastore.parseHashItem).map(resourceAttributes => new NucleusResourceModel(resourceAttributes, originUserID)));
+    const $$itemListPromise = $datastore.retrieveBatchItemByName(itemKeyList)
+      .then((resourceAttributesList) => {
+
+        return resourceAttributesList
+          .map(resourceAttributes => new NucleusResourceModel(resourceAttributes, originUserID));
+      });
 
     const $$resourceRelationshipsListPromise = $resourceRelationshipDatastore.retrieveAllRelationshipsForSubject(nodeList);
 
@@ -320,7 +323,7 @@ class NucleusResourceAPI {
 
     const resourceItemKey = NucleusResource.generateItemKey(resourceType, resourceID);
 
-    const resourceExists = !!(await $datastore.$$server.existsAsync(resourceItemKey));
+    const resourceExists = await $datastore.verifyThatItemByNameExist(resourceItemKey);
 
     if (!resourceExists) throw new NucleusError.UndefinedContextNucleusError(`The ${resourceType} ("${resourceID}") does not exist.`);
 
@@ -375,7 +378,7 @@ class NucleusResourceAPI {
 
     const resourceItemKey = NucleusResource.generateItemKey(resourceType, resourceID);
 
-    const resourceExists = !!(await $datastore.$$server.existsAsync(resourceItemKey));
+    const resourceExists = await $datastore.verifyThatItemByNameExist(resourceItemKey);
 
     if (!resourceExists) throw new NucleusError.UndefinedContextNucleusError(`The ${resourceType} ("${resourceID}") does not exist.`);
 
@@ -570,7 +573,7 @@ class NucleusResourceAPI {
 
 
   /**
-   * Retrieves a resource given its ID.
+   * Retrieves a batch of a specific resource type given a list of ID.
    *
    * @Nucleus ActionName RetrieveBatchResourceByIDList
    * @Nucleus ActionAlternativeSignature resourceType NucleusResourceModel resourceID originUserID
@@ -603,20 +606,19 @@ class NucleusResourceAPI {
 
     if (nucleusValidator.isEmpty($datastore)) throw new NucleusError.UndefinedContextNucleusError("No datastore is provided.");
 
-    const resourceItemList = resourceIDList
+    const itemKeyList = resourceIDList
       .map((resourceID) => {
+        const itemKey = NucleusResource.generateItemKey(resourceType, resourceID);
 
-        return NucleusResource.generateItemKey(resourceType, resourceID);
+        return itemKey;
       });
 
-    const itemDatastoreRequestList = resourceItemList
-      .map((itemKey) => {
+    const $$itemListPromise = $datastore.retrieveBatchItemByName(itemKeyList)
+      .then((resourceAttributesList) => {
 
-        return ['HGETALL', itemKey];
+        return resourceAttributesList
+          .map(resourceAttributes => new NucleusResourceModel(resourceAttributes, originUserID));
       });
-
-    const $$itemListPromise = $datastore.$$server.multi(itemDatastoreRequestList).execAsync()
-      .then(itemFields => itemFields.filter(Boolean).map(NucleusDatastore.parseHashItem).map(resourceAttributes => new NucleusResourceModel(resourceAttributes, originUserID)));
 
     const $$resourceRelationshipsListPromise = $resourceRelationshipDatastore.retrieveAllRelationshipsForSubject(resourceIDList
       .map((resourceID) => {
@@ -679,7 +681,7 @@ class NucleusResourceAPI {
 
     const resourceItemKey = NucleusResource.generateItemKey(resourceType, resourceID);
 
-    const resourceExists = !!(await $datastore.$$server.existsAsync(resourceItemKey));
+    const resourceExists = await $datastore.verifyThatItemByNameExist(resourceItemKey);
 
     if (!resourceExists) throw new NucleusError.UndefinedContextNucleusError(`The ${resourceType} ("${resourceID}") does not exist.`);
 
@@ -738,7 +740,7 @@ class NucleusResourceAPI {
 
     const resourceItemKey = NucleusResource.generateItemKey(resourceType, resourceID);
 
-    const resourceExists = !!(await $datastore.$$server.existsAsync(resourceItemKey));
+    const resourceExists = await $datastore.verifyThatItemByNameExist(resourceItemKey);
 
     if (!resourceExists) throw new NucleusError.UndefinedContextNucleusError(`The ${resourceType} ("${resourceID}") does not exist.`);
 
