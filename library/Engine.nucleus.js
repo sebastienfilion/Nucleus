@@ -75,6 +75,8 @@ class NucleusEngine {
       $actionDatastore = new NucleusDatastore(),
       $engineDatastore = new NucleusDatastore(),
       $eventDatastore = new NucleusDatastore(),
+      $resourceDatastore,
+      $resourceCacheDatastore,
       $resourceRelationshipDatastore = new NucleusResourceRelationshipDatastore($engineDatastore),
       $logger = console,
       automaticallyAutodiscover = false,
@@ -105,6 +107,9 @@ class NucleusEngine {
     this.$engineDatastore = this.$datastore = $engineDatastore;
     this.$eventDatastore = $eventDatastore;
     this.$eventSubscriberDatastore = this.$eventDatastore.duplicateConnection();
+
+    this.$resourceDatastore = $resourceDatastore || this.$engineDatastore;
+    this.$resourceCacheDatastore = $resourceCacheDatastore || this.$engineDatastore;
 
     if (automaticallyManageResourceRelationship) this.$resourceRelationshipDatastore = $resourceRelationshipDatastore;
 
@@ -458,11 +463,12 @@ class NucleusEngine {
       (contextName === 'Self')) ?
       this :
       // If the action is part of an external API file, the context will be either:
-      // The local datastore and the local logger or...
-      // The local datastore, the local logger and a relationship datastore, if available.
+      // The local resource datastore, the local cache datastore and the local logger or...
+      // The local resource datastore, the local cache datastore, the local logger and a relationship datastore, if available.
       (this.$resourceRelationshipDatastore) ?
-        {$datastore: this.$datastore, $logger: $augmentedLogger, $resourceRelationshipDatastore: this.$resourceRelationshipDatastore} :
-        {$datastore: this.$datastore, $logger: $augmentedLogger }, argumentList);
+        {$datastore: this.$resourceDatastore, $logger: $augmentedLogger, $resourceDatastore: this.$resourceDatastore, $resourceCacheDatastore: this.$resourceCacheDatastore, $resourceRelationshipDatastore: this.$resourceRelationshipDatastore} :
+        {$datastore: this.$resourceDatastore, $logger: $augmentedLogger, $resourceDatastore: this.$resourceDatastore, $resourceCacheDatastore: this.$resourceCacheDatastore }
+        , argumentList);
 
     return actionResponse;
   }
