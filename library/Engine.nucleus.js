@@ -95,6 +95,12 @@ class NucleusEngine {
     this.defautlActionHangupTimeout = defautlActionHangupTimeout;
     this.defaultActionQueueName = defaultActionQueueName;
 
+    if (
+      $actionDatastore.type !== 'Redis' ||
+      $engineDatastore !== 'Redis' ||
+      $eventDatastore !== 'Redis'
+    ) throw new NucleusError(`The action datastore, the engine datastore or the event datastore must be a Redis datastore adapter.`);
+
     this.$actionDatastore = $actionDatastore;
     this.$engineDatastore = this.$datastore = $engineDatastore;
     this.$eventDatastore = $eventDatastore;

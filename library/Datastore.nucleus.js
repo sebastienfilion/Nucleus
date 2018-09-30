@@ -47,6 +47,8 @@ class NucleusDatastore {
     } = options;
 
     this.name = datastoreName;
+    this.type = 'Redis';
+
     this.index = datastoreIndex;
 
     this.$$handlerCallbackListByChannelName = {};
