@@ -7,7 +7,6 @@
  */
 
 const { struct } = require('superstruct');
-const validator = require('validator');
 
 /**
  * Validates that the value is an Array.
