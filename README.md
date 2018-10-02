@@ -1,15 +1,52 @@
 # Nucleus
 
-Nucleus is a flexible library that offers tools to implement a distributed micro-service(-like) architecture in NodeJS.  
+Nucleus is a flexible library that offers tools to implement a distributed micro-service(-like) architecture in NodeJS.
+
+[![npm version](https://badge.fury.io/js/idex.nucleus.svg)](https://badge.fury.io/js/idex.nucleus)
+
+IDEX Nucleus Core is the framework to build flexible, scalable and structured back-end architecture. 
+It includes:  
+
+  * Structured dataflow;  
+  * Inter-engine communication protocol;   
+  * Content persistence API;  
+  * Content relationship powered by Graph technology;  
+  * Intuitive workflow;
 
 ## Getting started
+
+### NPM
+
+You can quickly and easily install IDEX Nucleus Core to your project using NPM.
+Make sure to install [NodeJS and NPM](https://nodejs.org/en/download/) before;
+
+```bash
+$ npm install idex.nucleus
+```
 
 ### Redis
 
 The communication of Nucleus is heavily based on Redis, first and for all make sure to install Redis. [Redis installation guide](https://redis.io/topics/quickstart)
 
-For Nucleus to work correctly, you need to make sure that your server can use keyspace notification. `CONFIG SAVE notify-keyspace-events AKE`  
-You can copy the `redis.conf` file from Nucleus root directory into your project.
+For Nucleus to work correctly, you need to make sure that your server can use keyspace notification.  
+You can test that keyspace notification is enabled using the `redis-cli`:
+
+```bash
+$ redis-cli
+127.0.0.1:6379> CONFIG GET notify-keyspace-events
+1) "notify-keyspace-events"
+2) "AKE"
+```
+
+If it isn't enabled you can enable it manually using the `CONFIG SET` command:
+
+```bash
+$ redis-cli
+127.0.0.1:6379> CONFIG SET notify-keyspace-events AKE
+OK
+```
+
+or, you can copy the `redis.conf` file from Nucleus root directory into your project.
 
 ```bash
 $ redis-server PATH_TO_PROJECT/redis.conf
@@ -69,3 +106,20 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Contributing 
+
+  1. Fork it (https://github.com/sebastienfilion/idex.nucleus/fork)
+  2. Create your feature branch (`git checkout -b feature/foo-bar`)
+  3. Commit your changes (`git commit -am 'Add some fooBar'`)
+  4. Push to the branch (`git push origin feature/food-bar`)
+  5. Create a new Pull Request
+  
+Please use the following namespace convention to name you branch:
+
+  * `feature/[:issue-number/]:feature-name` Marks a branch that introduce a new feature. Add the issue number if it is 
+  available. ie: `feature/#24/emoji-action-name`;
+  * `bugfix/[:issue-number/]:bug-name` Marks a branch that fixes a bug. Add the issue number if it is available. ie: 
+  `bugfix/#13/engine-cleanup`;
+  * `change/[:issue-number/]:change-name` Marks a branch that makes a change to the codebase or documentation. Add the 
+  issue number if it is available. ie: `change/update-release-note`;
