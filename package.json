@@ -1,5 +1,5 @@
 {
-  "name": "idex.nucleus",
+  "name": "@idex/nucleus.core",
   "version": "0.10.0",
   "description": "A flexible library to implement a distributed micro-service(-like) architecture in NodeJS.",
   "keywords": [
