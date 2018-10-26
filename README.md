@@ -21,7 +21,7 @@ You can quickly and easily install IDEX Nucleus Core to your project using NPM.
 Make sure to install [NodeJS and NPM](https://nodejs.org/en/download/) before;
 
 ```bash
-$ npm install idex.nucleus
+$ npm install @idex/nucleus.core
 ```
 
 ### Redis
