@@ -27,6 +27,7 @@ class NucleusError extends Error {
    * Creates a Nucleus Error.
    *
    * @argument {String} errorMessage
+   * @argument {Object} options
    */
   constructor (errorMessage, options = {}) {
     super(errorMessage);
@@ -35,6 +36,27 @@ class NucleusError extends Error {
 
     this.name = 'NucleusError';
     this.errorCode = 600;
+
+    Object.defineProperties(this, {
+      '_meta': { writable: true, enumerable: false },
+      'meta': {
+        enumerable: true,
+        get: () => {
+          return this._meta;
+        },
+        set: (options) => {
+          let accumulator = {};
+
+          if (options.error) {
+            accumulator = options.error.meta;
+          }
+
+          Reflect.deleteProperty(options, 'error');
+          this._meta = Object.assign(options, accumulator);
+          return true;
+        }
+      }
+    });
 
     if (!!error && error instanceof Error && 'stack' in error) this.stack = error.stack;
 
@@ -51,7 +73,6 @@ class NucleusError extends Error {
     });
 
     if (!nucleusValidator.isEmpty(options)) {
-      Reflect.deleteProperty(options, 'error');
       this.meta = options;
     }
   }

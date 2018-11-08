@@ -223,6 +223,12 @@ mocha.suite('Nucleus Engine', function () {
         methodName: 'executeSimpleDummyWithRandomExecutionTime'
       });
 
+      await $dummyEngine.storeActionConfiguration({
+        actionName: 'ThrowErrorWithMetaData',
+        contextName: 'Self',
+        methodName: 'throwErrorWithMetaData'
+      });
+
     });
 
     mocha.suiteTeardown(async function () {
@@ -466,7 +472,11 @@ mocha.suite('Nucleus Engine', function () {
 
           const actionItemKey = await $datastore.$$server.lpopAsync('Dummy');
 
-          await $datastore.addItemToHashFieldByName(actionItemKey, 'finalMessage', { dummy: { ID: uuid.v4() } }, 'status', NucleusAction.CompletedActionStatus);
+          if (/.*ExecuteSimpleDummy.*/.test(actionItemKey)) {
+            await $datastore.addItemToHashFieldByName(actionItemKey, 'finalMessage', { dummy: { ID: uuid.v4() } }, 'status', NucleusAction.CompletedActionStatus);
+          } else if (/.*ThrowErrorWithMetaData.*/.test(actionItemKey)) {
+            await $datastore.addItemToHashFieldByName(actionItemKey, 'finalMessage', { error: new NucleusError(`This is an error with meta data.`, { EID: uuid() }) }, 'status', NucleusAction.FailedActionStatus);
+          }
 
           await $handlerDatastore.$$server.unsubscribe(`__keyspace@${DATASTORE_INDEX}__:Dummy`);
         });
@@ -481,6 +491,17 @@ mocha.suite('Nucleus Engine', function () {
         const { dummy } = await $engine.publishActionByNameAndHandleResponse('ExecuteSimpleDummy', { iam: 'special' }, userID);
 
         chai.expect(dummy).to.be.an('object');
+      });
+
+      mocha.test("The error contains the meta data", async function () {
+        const { $engine } = this;
+        const userID = uuid.v4();
+
+        try {
+          await $engine.publishActionByNameAndHandleResponse('ThrowErrorWithMetaData', {}, userID);
+        } catch (error) {
+          chai.expect(error.meta).to.have.ownProperty('EID');
+        }
       });
 
       mocha.test.skip("The response promise can be used like a bluebird promise.", function () {

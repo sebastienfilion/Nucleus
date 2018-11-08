@@ -739,9 +739,11 @@ end
         const errorAttributes = actionFinalMessage.error;
         const NucleusErrorType = (Object.keys(NucleusError).includes(errorAttributes.name)) ? NucleusError[errorAttributes.name] : NucleusError;
 
-        if (reject) reject(new NucleusErrorType(errorAttributes.message, {error: errorAttributes}));
+        const error = new NucleusErrorType(errorAttributes.message, {error: errorAttributes});
 
-        return Promise.reject({ actionStatus, error: new NucleusErrorType(errorAttributes.message, {error: errorAttributes}) });
+        if (reject) reject(error);
+
+        return Promise.reject({ actionStatus, error });
       } else (reject || Promise.reject)({ actionStatus });
     }
 
