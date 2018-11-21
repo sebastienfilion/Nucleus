@@ -671,9 +671,29 @@ mocha.suite('Nucleus Engine', function () {
   });
 
   // NOTE: This test oddly fails when run along the others, seems like the datastore connection closes before getting here.
-  mocha.suite.skip("Autodiscovery", function () {
+  mocha.suite("Autodiscovery", function () {
 
-    mocha.test("Autodiscovery test", async function () {
+    mocha.test("Autodiscovery cleanup", async function () {
+      const { $engine, $$sandbox } = this;
+      
+      const $$engineRetrieveAllDocletsInPathStub = $$sandbox.stub(NucleusEngine, 'retrieveAllDocletsInPath');
+      const $$engineRetrieveModuleDirectoryPathStub = $$sandbox.stub(NucleusEngine, 'retrieveModuleDirectoryPath');
+      
+      $$engineRetrieveAllDocletsInPathStub.returns(Promise.resolve([]));
+      $$engineRetrieveModuleDirectoryPathStub.returns('/');
+
+      const $$engineRemoveAllActionConfigurationsSpy = $$sandbox.spy($engine, 'removeAllActionConfigurations');
+      const $$engineRemoveAllExtendableActionConfigurationsSpy = $$sandbox.spy($engine, 'removeAllExtendableActionConfigurations');
+      const $$engineRemoveAllResourceStructuresSpy = $$sandbox.spy($engine, 'removeAllResourceStructures');
+    
+      await $engine.autodiscover();
+
+      chai.expect($$engineRemoveAllActionConfigurationsSpy.called).to.be.true;
+      chai.expect($$engineRemoveAllExtendableActionConfigurationsSpy.called).to.be.true;
+      chai.expect($$engineRemoveAllResourceStructuresSpy.called).to.be.true;
+    });
+
+    mocha.test.skip("Autodiscovery test", async function () {
       const { $dummyEngine } = this;
 
       const { actionConfigurationList, extendableActionConfigurationList, resourceStructureList } = await $dummyEngine.autodiscover(path.join(__dirname, '/autodiscoveryTestAssets'));

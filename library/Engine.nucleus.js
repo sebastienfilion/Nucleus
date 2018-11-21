@@ -152,8 +152,8 @@ class NucleusEngine {
    */
   async autodiscover (engineDirectoryPath = NucleusEngine.retrieveModuleDirectoryPath(this.name)) {
     // Retrieve all of the modules doclets using the JSDoc parser.
-    const resourceAPIDocletList = await retrieveAllDocletsInPath(path.join(__dirname, '/ResourceAPI.nucleus.js'));
-    const engineDocletList = await retrieveAllDocletsInPath(engineDirectoryPath);
+    const resourceAPIDocletList = await NucleusEngine.retrieveAllDocletsInPath(path.join(__dirname, '/ResourceAPI.nucleus.js'));
+    const engineDocletList = await NucleusEngine.retrieveAllDocletsInPath(engineDirectoryPath);
 
     // Filter out doclets that does not have a "Nucleus" tag.
     const filteredDocletList = [].concat(engineDocletList, resourceAPIDocletList)
@@ -259,6 +259,12 @@ class NucleusEngine {
           filePath: path.join(doclet.meta.path, doclet.meta.filename),
         }, nucleusTagsByName);
       });
+
+    await this.removeAllActionConfigurations();
+
+    await this.removeAllExtendableActionConfigurations();
+
+    await this.removeAllResourceStructures();
 
     await this.storeActionConfiguration(actionConfigurationList);
 
@@ -791,6 +797,33 @@ end
   }
 
   /**
+   * Removes all action configurations.
+   *
+   * @returns {Promise}
+   */
+  removeAllActionConfigurations () {
+    return this.$datastore.removeItemByName(ACTION_CONFIGURATION_BY_ACTION_NAME_TABLE_NAME);
+  }
+
+  /**
+   * Removes all extendable action configurations.
+   *
+   * @returns {Promise}
+   */
+  removeAllExtendableActionConfigurations () {
+    return this.$datastore.removeItemByName(EXTENDABLE_ACTION_CONFIGURATION_BY_ACTION_NAME_TABLE_NAME);
+  }
+
+  /**
+   * Removes all resource structures.
+   *
+   * @returns {Promise}
+   */
+  removeAllResourceStructures() {
+    return this.$datastore.removeItemByName(RESOURCE_STRUCTURE_BY_RESOURCE_TYPE_TABLE_NAME);
+  }
+
+  /**
    * Retrieves the action configurations given an action name.
    *
    * @argument {String} actionName
@@ -919,6 +952,7 @@ end
       this.$actionDatastore.addItemToHashFieldByName(ACTION_QUEUE_NAME_BY_ACTION_NAME_ITEM_NAME_TABLE_NAME, actionName, this.defaultActionQueueName)
     ]);
   }
+
 
   /**
    * Stores an extendable action configuration.
@@ -1178,6 +1212,34 @@ Please make sure that everything is set-up properly. https://github.com/sebastie
   }
 
   /**
+   * Retrieves all doclets in path.
+   * @see {@link https://github.com/jsdoc3/jsdoc/blob/master/lib/jsdoc/doclet.js|JSDoc Doclet|}
+   *
+   * @argument {String} path
+   *
+   * @returns {Promise<doclet[]>}
+   */
+  static retrieveAllDocletsInPath (path) {
+
+    return new Promise((resolve, reject) => {
+      const chunkList = [];
+      const $$childProcess = childProcess.spawn('node', [ JSDocParserPath, '-X', '-r', path ], { cwd: process.cwd() });
+
+      $$childProcess.stdout.setEncoding('utf8');
+      $$childProcess.stderr.setEncoding('utf8');
+
+      $$childProcess.stdout.on('data', chunkList.push.bind(chunkList));
+      $$childProcess.stderr.on('data', reject);
+
+      $$childProcess.on('close', () => {
+        const docletList = JSON.parse(chunkList.join(''));
+
+        resolve(docletList);
+      });
+      $$childProcess.on('error', reject);
+    });
+  }
+  /**
    * Retrieves the current module directory path.
    *
    * @argument {Object} [moduleNode=module.parent] - Used for recursion.
@@ -1225,31 +1287,3 @@ function parseNucleusTag (docletTagList) {
     }, {});
 }
 
-/**
- * Retrieves all doclets in path.
- * @see {@link https://github.com/jsdoc3/jsdoc/blob/master/lib/jsdoc/doclet.js|JSDoc Doclet|}
- *
- * @argument {String} path
- *
- * @returns {Promise<doclet[]>}
- */
-function retrieveAllDocletsInPath (path) {
-
-  return new Promise((resolve, reject) => {
-    const chunkList = [];
-    const $$childProcess = childProcess.spawn('node', [ JSDocParserPath, '-X', '-r', path ], { cwd: process.cwd() });
-
-    $$childProcess.stdout.setEncoding('utf8');
-    $$childProcess.stderr.setEncoding('utf8');
-
-    $$childProcess.stdout.on('data', chunkList.push.bind(chunkList));
-    $$childProcess.stderr.on('data', reject);
-
-    $$childProcess.on('close', () => {
-      const docletList = JSON.parse(chunkList.join(''));
-
-      resolve(docletList);
-    });
-    $$childProcess.on('error', reject);
-  });
-}
