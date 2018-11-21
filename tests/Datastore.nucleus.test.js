@@ -119,7 +119,8 @@ mocha.suite("Nucleus Datastore", function () {
           {
             k: 'K'
           }
-        ]
+        ],
+        l: []
       });
 
       chai.expect(collapsedObject['a.b.c']).to.equal('C');
@@ -127,6 +128,7 @@ mocha.suite("Nucleus Datastore", function () {
       chai.expect(collapsedObject['f.g.h']).to.equal('H');
       chai.expect(collapsedObject['i[0]']).to.equal('I');
       chai.expect(collapsedObject['j[0].k']).to.equal('K');
+      chai.expect(collapsedObject['l[0]']).to.equal(null);
     });
 
   });
@@ -140,7 +142,8 @@ mocha.suite("Nucleus Datastore", function () {
         'a.b.e': 'E',
         'f.g.h': 'H',
         'i[0]': 'I',
-        'j[0].k': 'K'
+        'j[0].k': 'K',
+        'l[0]': null
       });
 
       chai.expect(expandedObject.a.b.c).to.equal('C');
@@ -149,6 +152,7 @@ mocha.suite("Nucleus Datastore", function () {
       chai.expect(expandedObject.f.g.h).to.equal('H');
       chai.expect(expandedObject.i[0]).to.equal('I');
       chai.expect(expandedObject.j[0].k).to.equal('K');
+      chai.expect(expandedObject.l[0]).to.equal(null);
     });
 
     mocha.test("Expands dot notation object2", function () {
@@ -602,9 +606,9 @@ return { itemIDA, itemIDB, itemIDC }
     });
 
   });
-  
+
   mocha.suite("#retrieveItemByName", function () {
-    
+
     mocha.test("Given its hash key, the item of type string is retrieved.", function () {
       const { $datastore } = this;
 

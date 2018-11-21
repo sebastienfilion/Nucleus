@@ -865,10 +865,14 @@ class NucleusDatastore {
     }
 
     function reduceArray (propertyNamePath, accumulator, array) {
-      array
-        .forEach((value, index) => {
-          reduceValue(`${propertyNamePath}[${index}]`, accumulator, value);
-        });
+      if (array.length === 0) {
+        reduceValue(`${propertyNamePath}[0]`, accumulator, null);
+      } else {
+        array
+          .forEach((value, index) => {
+            reduceValue(`${propertyNamePath}[${index}]`, accumulator, value);
+          });
+      }
     }
 
     function reduceValue (propertyNamePath, accumulator, value) {
@@ -919,7 +923,7 @@ class NucleusDatastore {
                 return accumulator[propertyName];
               } else {
                 // If the property is a number, collapse as an array.
-                if (nucleusValidator.isArray(accumulator)) {
+                if (nucleusValidator.isArray(accumulator) && value) {
                   accumulator[propertyName] = value;
                   accumulator = accumulator.filter(Boolean);
                 } else accumulator[propertyName] = (value === null) ? undefined : value;
