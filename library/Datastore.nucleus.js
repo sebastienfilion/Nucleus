@@ -924,11 +924,10 @@ class NucleusDatastore {
               } else {
                 // If the property is a number, collapse as an array.
                 if (nucleusValidator.isArray(accumulator)) {
-                  // if Array is empty
-                  if(value) {
-                    accumulator[propertyName] = value;
-                    accumulator = accumulator.filter(Boolean);
-                  }
+                  if (!propertyName || !value) return undefined;
+
+                  accumulator[propertyName] = value;
+                  accumulator = accumulator.filter(Boolean);
                 } else accumulator[propertyName] = (value === null) ? undefined : value;
               }
 
